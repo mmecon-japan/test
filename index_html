@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2026年度 経営学部演習（ゼミ）検索サイト</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <h1>明治大学 経営学部 演習（ゼミ）検索</h1>
+      <p class="subtitle">2026年度 演習ガイド対応 | タグ・キーワードで希望のゼミを探す</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- 検索バー領域 -->
+    <section class="search-section">
+      <input type="text" id="search-box" placeholder="教員名、研究テーマ、キーワードで検索..." autocomplete="off">
+    </section>
+
+    <!-- 選択中タグ表示領域 -->
+    <section class="selected-tags-section">
+      <div id="selected-tags" class="selected-tags-container"></div>
+    </section>
+
+    <!-- タグ一覧領域 -->
+    <section class="tag-section">
+      <h2 class="section-title">絞り込みタグ</h2>
+      <div id="tag-container" class="tag-container"></div>
+    </section>
+
+    <!-- 演習一覧領域 -->
+    <section class="seminar-section">
+      <div class="list-header">
+        <h2 class="section-title">ゼミ一覧</h2>
+        <span id="result-count" class="result-count">全 0 件</span>
+      </div>
+      <div id="seminar-list" class="seminar-grid"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>&copy; 2026 明治大学経営学部演習ガイド 検索システム</p>
+  </footer>
+
+  <script src="search.js"></script>
+</body>
+</html>

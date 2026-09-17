@@ -1,92 +1,192 @@
-let seminars = [];
-let selectedTags = new Set();
+document.addEventListener('DOMContentLoaded', () => {
+  let allSeminars = [];
+  const selectedTags = new Set();
+  let searchQuery = '';
 
-fetch("seminars.json")
-  .then(res => res.json())
-  .then(data => {
-    seminars = data;
-    updateUI(seminars);
-  });
+  const searchBox = document.getElementById('search-box');
+  const tagContainer = document.getElementById('tag-container');
+  const selectedTagsContainer = document.getElementById('selected-tags');
+  const seminarList = document.getElementById('seminar-list');
+  const resultCount = document.getElementById('result-count');
 
-function updateUI(currentList) {
-  renderTags(currentList);
-  renderSeminars(currentList);
-}
-
-function renderTags(currentList) {
-  const container = document.getElementById("tag-container");
-  container.innerHTML = "";
-
-  // 現在表示されている演習からタグを再計算
-  const tagCounts = {};
-  currentList.forEach(s => {
-    s.tags.forEach(t => {
-      tagCounts[t] = (tagCounts[t] || 0) + 1;
+  fetch('seminars.json')
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      allSeminars = data;
+      initSite();
+    })
+    .catch(error => {
+      console.error('Error loading seminars.json:', error);
+      seminarList.innerHTML = '<div class="no-results">データの読み込みに失敗しました。</div>';
     });
-  });
 
-  // 件数が 0 のタグは表示しない
-  Object.keys(tagCounts)
-    .sort()
-    .forEach(tag => {
-      const btn = document.createElement("button");
-      btn.textContent = `${tag} (${tagCounts[tag]})`;
+  function initSite() {
+    searchBox.addEventListener('input', (e) => {
+      searchQuery = e.target.value.trim().toLowerCase();
+      updateView();
+    });
 
-      // 選択状態の反映
-      if (selectedTags.has(tag)) {
-        btn.classList.add("active");
+    updateView();
+  }
+
+  function updateView() {
+    const filteredSeminars = getFilteredSeminars();
+    renderSelectedTags();
+    updateTagContainer(filteredSeminars);
+    renderSeminarList(filteredSeminars);
+  }
+
+  function getFilteredSeminars() {
+    return allSeminars.filter(seminar => {
+      for (const tag of selectedTags) {
+        if (!seminar.tags.includes(tag)) {
+          return false;
+        }
       }
 
-      btn.onclick = () => {
+      if (searchQuery) {
+        const nameMatch = seminar.name.toLowerCase().includes(searchQuery);
+        const titleMatch = seminar.title.toLowerCase().includes(searchQuery);
+        const codeMatch = seminar.code.includes(searchQuery);
+        const typeMatch = seminar.type.toLowerCase().includes(searchQuery);
+        const tagMatch = seminar.tags.some(t => t.toLowerCase().includes(searchQuery));
+
+        if (!nameMatch && !titleMatch && !codeMatch && !typeMatch && !tagMatch) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }
+
+  function renderSelectedTags() {
+    selectedTagsContainer.innerHTML = '';
+    if (selectedTags.size === 0) return;
+
+    selectedTags.forEach(tag => {
+      const tagItem = document.createElement('div');
+      tagItem.className = 'selected-tag-item';
+      tagItem.innerHTML = `<span>${escapeHTML(tag)}</span> <span class="remove-btn">&times;</span>`;
+      tagItem.addEventListener('click', () => {
+        selectedTags.delete(tag);
+        updateView();
+      });
+      selectedTagsContainer.appendChild(tagItem);
+    });
+
+    const clearAllBtn = document.createElement('button');
+    clearAllBtn.className = 'clear-all-btn';
+    clearAllBtn.textContent = '条件をクリア';
+    clearAllBtn.addEventListener('click', () => {
+      selectedTags.clear();
+      searchQuery = '';
+      searchBox.value = '';
+      updateView();
+    });
+    selectedTagsContainer.appendChild(clearAllBtn);
+  }
+
+  function updateTagContainer(filteredSeminars) {
+    const tagCounts = new Map();
+
+    filteredSeminars.forEach(seminar => {
+      seminar.tags.forEach(tag => {
+        tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
+      });
+    });
+
+    const availableTags = new Set([...tagCounts.keys(), ...selectedTags]);
+
+    const sortedTags = Array.from(availableTags).sort((a, b) => {
+      const countA = tagCounts.get(a) || 0;
+      const countB = tagCounts.get(b) || 0;
+      if (countB !== countA) {
+        return countB - countA;
+      }
+      return a.localeCompare(b, 'ja');
+    });
+
+    tagContainer.innerHTML = '';
+
+    sortedTags.forEach(tag => {
+      const count = tagCounts.get(tag) || 0;
+
+      if (count === 0 && !selectedTags.has(tag)) {
+        return;
+      }
+
+      const button = document.createElement('button');
+      button.className = 'tag-btn';
+      if (selectedTags.has(tag)) {
+        button.classList.add('active');
+      }
+
+      button.innerHTML = `${escapeHTML(tag)} <span class="count">(${count})</span>`;
+
+      button.addEventListener('click', () => {
         if (selectedTags.has(tag)) {
           selectedTags.delete(tag);
         } else {
           selectedTags.add(tag);
         }
-        filterSeminars();
-      };
+        updateView();
+      });
 
-      container.appendChild(btn);
+      tagContainer.appendChild(button);
     });
-
-  updateSelectedTags();
-}
-
-function updateSelectedTags() {
-  const container = document.getElementById("selected-tags");
-  container.textContent =
-    selectedTags.size === 0
-      ? "選択中: なし"
-      : "選択中: " + [...selectedTags].join(", ");
-}
-
-function filterSeminars() {
-  let filtered = seminars;
-
-  if (selectedTags.size > 0) {
-    filtered = seminars.filter(s =>
-      [...selectedTags].every(tag => s.tags.includes(tag))
-    );
   }
 
-  updateUI(filtered);
-}
+  function renderSeminarList(seminars) {
+    resultCount.textContent = `全 ${seminars.length} 件`;
+    seminarList.innerHTML = '';
 
-function renderSeminars(list) {
-  const container = document.getElementById("seminar-list");
-  container.innerHTML = "";
+    if (seminars.length === 0) {
+      seminarList.innerHTML = '<div class="no-results">条件に一致する演習が見つかりませんでした。検索条件を変更してください。</div>';
+      return;
+    }
 
-  list.forEach(s => {
-    const card = document.createElement("div");
-    card.className = "seminar-card";
-    card.innerHTML = `
-      <h3>${s.code} ${s.name}</h3>
-      <p><strong>テーマ：</strong>${s.title}</p>
-      <p><strong>タイプ：</strong>${s.type}</p>
-      <div>
-        ${s.tags.map(t => `<span class="tag-pill">${t}</span>`).join("")}
-      </div>
-    `;
-    container.appendChild(card);
-  });
-}
+    seminars.forEach(seminar => {
+      const card = document.createElement('div');
+      card.className = 'seminar-card';
+
+      const typeClass = seminar.type.includes('2年半') ? 'type-2half' : 'type-2year';
+
+      const tagPillsHTML = seminar.tags.map(tag => {
+        const isSelected = selectedTags.has(tag);
+        const isSearchMatched = searchQuery && tag.toLowerCase().includes(searchQuery);
+        const matchedClass = (isSelected || isSearchMatched) ? 'matched' : '';
+        return `<span class="tag-pill ${matchedClass}">${escapeHTML(tag)}</span>`;
+      }).join('');
+
+      card.innerHTML = `
+        <div class="card-header">
+          <span class="seminar-code">コード: ${escapeHTML(seminar.code)}</span>
+          <span class="seminar-type ${typeClass}">${escapeHTML(seminar.type)}</span>
+        </div>
+        <div class="seminar-name">${escapeHTML(seminar.name)} 演習</div>
+        <div class="seminar-title">${escapeHTML(seminar.title)}</div>
+        <div class="card-tags">
+          ${tagPillsHTML}
+        </div>
+      `;
+
+      seminarList.appendChild(card);
+    });
+  }
+
+  function escapeHTML(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+});
