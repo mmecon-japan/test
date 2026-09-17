@@ -33,6 +33,8 @@ h1, h2 {
 #tag-container button.active {
   background: #002b5c;
   color: white;
+  border: none;
+  font-weight: bold;
 }
 
 #selected-tags {
