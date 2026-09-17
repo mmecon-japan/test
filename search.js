@@ -41,21 +41,26 @@ document.addEventListener('DOMContentLoaded', () => {
     renderSeminarList(filteredSeminars);
   }
 
+  // 表記ゆれ・記号吸収の正規化
   function normalizeText(str) {
     if (!str) return '';
     return str.toLowerCase()
       .replace(/[\s　・,．.・、:：;；\-_―ー]/g, '');
   }
 
+  // 方向性のある包含関係判定 (seminarTagがtargetTagを含むか)
+  // 例: selectedTag="社会" のとき seminarTag="国際化社会" は "国際化社会".includes("社会") で true
+  // 例: selectedTag="国際化社会" のとき seminarTag="社会" は "社会".includes("国際化社会") で false
   function isTagMatched(seminarTag, targetTag) {
     const normSem = normalizeText(seminarTag);
     const normTgt = normalizeText(targetTag);
     if (!normSem || !normTgt) return false;
-    return normSem.includes(normTgt) || normTgt.includes(normSem);
+    return normSem.includes(normTgt);
   }
 
   function getFilteredSeminars() {
     return allSeminars.filter(seminar => {
+      // 選択中タグの方向性包含関係AND検索
       for (const selectedTag of selectedTags) {
         const hasMatch = seminar.tags.some(semTag => isTagMatched(semTag, selectedTag));
         if (!hasMatch) {
@@ -63,6 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
+      // フリーワード検索
       if (searchQuery) {
         const normQuery = normalizeText(searchQuery);
         const nameMatch = normalizeText(seminar.name).includes(normQuery);
