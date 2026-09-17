@@ -157,13 +157,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const typeClass = seminar.type.includes('2年半') ? 'type-2half' : 'type-2year';
 
-      const tagPillsHTML = seminar.tags.map(tag => {
-        const isSelected = selectedTags.has(tag);
-        const isSearchMatched = searchQuery && tag.toLowerCase().includes(searchQuery);
-        const matchedClass = (isSelected || isSearchMatched) ? 'matched' : '';
-        return `<span class="tag-pill ${matchedClass}">${escapeHTML(tag)}</span>`;
-      }).join('');
-
       card.innerHTML = `
         <div class="card-header">
           <span class="seminar-code">コード: ${escapeHTML(seminar.code)}</span>
@@ -171,10 +164,32 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <div class="seminar-name">${escapeHTML(seminar.name)} 演習</div>
         <div class="seminar-title">${escapeHTML(seminar.title)}</div>
-        <div class="card-tags">
-          ${tagPillsHTML}
-        </div>
+        <div class="card-tags"></div>
       `;
+
+      const cardTagsContainer = card.querySelector('.card-tags');
+
+      seminar.tags.forEach(tag => {
+        const isSelected = selectedTags.has(tag);
+        const isSearchMatched = searchQuery && tag.toLowerCase().includes(searchQuery);
+
+        const tagPill = document.createElement('span');
+        tagPill.className = `tag-pill ${(isSelected || isSearchMatched) ? 'matched' : ''}`;
+        tagPill.textContent = tag;
+
+        // ゼミカードのタグをクリックでトグル選択
+        tagPill.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (selectedTags.has(tag)) {
+            selectedTags.delete(tag);
+          } else {
+            selectedTags.add(tag);
+          }
+          updateView();
+        });
+
+        cardTagsContainer.appendChild(tagPill);
+      });
 
       seminarList.appendChild(card);
     });

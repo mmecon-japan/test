@@ -261,13 +261,26 @@ body {
   padding: 3px 8px;
   border-radius: 4px;
   border: 1px solid #e0e0e0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.tag-pill:hover {
+  background-color: #e8eaed;
+  border-color: #1a73e8;
+  color: #1a73e8;
 }
 
 .tag-pill.matched {
   background-color: #e8f0fe;
   color: #1a73e8;
-  border-color: #c2e7ff;
+  border-color: #aecbfa;
   font-weight: 600;
+}
+
+.tag-pill.matched:hover {
+  background-color: #d2e3fc;
 }
 
 .no-results {
