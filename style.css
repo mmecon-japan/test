@@ -1,0 +1,58 @@
+body {
+  font-family: "Yu Gothic", sans-serif;
+  background: #f7f7f7;
+  margin: 0;
+  padding: 0;
+  color: #333;
+}
+
+header {
+  background: #002b5c;
+  color: white;
+  padding: 20px;
+  text-align: center;
+}
+
+h1, h2 {
+  margin: 0 0 20px;
+}
+
+#password-screen {
+  max-width: 400px;
+  margin: 120px auto;
+  padding: 30px;
+  background: white;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+#password-input {
+  width: 80%;
+  padding: 10px;
+  margin-bottom: 15px;
+}
+
+button {
+  padding: 10px 20px;
+  background: #002b5c;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+#tag-container button {
+  margin: 5px;
+  padding: 8px 12px;
+  background: #ddd;
+  border: none;
+  cursor: pointer;
+}
+
+.seminar-card {
+  background: white;
+  padding: 15px;
+  margin: 10px 0;
+  border-radius: 6px;
+  box-shadow: 0 0 5px rgba(0,0,0,0.1);
+}

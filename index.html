@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>経営学部 演習検索サイト</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="password.js"></script>
+</head>
+<body>
+
+<div id="password-screen">
+  <h2>閲覧パスワードを入力してください</h2>
+  <input type="password" id="password-input" placeholder="パスワード">
+  <button onclick="checkPassword()">ログイン</button>
+  <p id="error-message"></p>
+</div>
+
+<div id="main-content" style="display:none;">
+  <header>
+    <h1>2026年度 経営学部 演習検索サイト</h1>
+  </header>
+
+  <section>
+    <h2>タグ検索</h2>
+    <div id="tag-container"></div>
+  </section>
+
+  <section>
+    <h2>演習一覧</h2>
+    <div id="seminar-list"></div>
+  </section>
+
+  <script src="search.js"></script>
+</div>
+
+</body>
+</html>
