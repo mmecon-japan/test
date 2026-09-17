@@ -9,15 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const seminarList = document.getElementById('seminar-list');
   const resultCount = document.getElementById('result-count');
 
-  // 文字列の正規化関数（全角半角の統一、スペース・カンマ・ピリオド・中黒の除去、小文字化）
-  function normalizeText(str) {
-    if (!str) return '';
-    return str
-      .toLowerCase()
-      .replace(/[\s　・,，\.。、]/g, '') // 空白や記号を無視して突合
-      .normalize('NFKC');
-  }
-
   fetch('seminars.json')
     .then(response => {
       if (!response.ok) {
@@ -50,41 +41,38 @@ document.addEventListener('DOMContentLoaded', () => {
     renderSeminarList(filteredSeminars);
   }
 
-  // 演習のフィルタリング（柔軟なタグマッチング ＋ 正規化フリーワード検索）
+  function normalizeText(str) {
+    if (!str) return '';
+    return str.toLowerCase()
+      .replace(/[\s　・,．.・、:：;；\-_―ー]/g, '');
+  }
+
+  function isTagMatched(seminarTag, targetTag) {
+    const normSem = normalizeText(seminarTag);
+    const normTgt = normalizeText(targetTag);
+    if (!normSem || !normTgt) return false;
+    return normSem.includes(normTgt) || normTgt.includes(normSem);
+  }
+
   function getFilteredSeminars() {
-    const normQuery = normalizeText(searchQuery);
-
     return allSeminars.filter(seminar => {
-      // 1. 選択中タグによる絞り込み（包含関係・部分一致の判定）
-      for (const selTag of selectedTags) {
-        const normSelTag = normalizeText(selTag);
-        const hasMatchedTag = seminar.tags.some(t => {
-          const normT = normalizeText(t);
-          return normT.includes(normSelTag) || normSelTag.includes(normT);
-        });
-
-        if (!hasMatchedTag) {
+      for (const selectedTag of selectedTags) {
+        const hasMatch = seminar.tags.some(semTag => isTagMatched(semTag, selectedTag));
+        if (!hasMatch) {
           return false;
         }
       }
 
-      // 2. フリーワード部分一致検索（教員名・研究テーマ・コード・タイプ・タグ・研究内容本文）
-      if (normQuery) {
-        const normName = normalizeText(seminar.name);
-        const normTitle = normalizeText(seminar.title);
-        const normCode = normalizeText(seminar.code);
-        const normType = normalizeText(seminar.type);
-        const normContent = normalizeText(seminar.content || '');
-        const normTagMatch = seminar.tags.some(t => normalizeText(t).includes(normQuery));
+      if (searchQuery) {
+        const normQuery = normalizeText(searchQuery);
+        const nameMatch = normalizeText(seminar.name).includes(normQuery);
+        const titleMatch = normalizeText(seminar.title).includes(normQuery);
+        const codeMatch = seminar.code.includes(searchQuery);
+        const typeMatch = seminar.type.includes(searchQuery);
+        const tagMatch = seminar.tags.some(t => normalizeText(t).includes(normQuery));
+        const contentMatch = normalizeText(seminar.content).includes(normQuery);
 
-        const isMatch = normName.includes(normQuery) ||
-                        normTitle.includes(normQuery) ||
-                        normCode.includes(normQuery) ||
-                        normType.includes(normQuery) ||
-                        normContent.includes(normQuery) ||
-                        normTagMatch;
-
-        if (!isMatch) {
+        if (!nameMatch && !titleMatch && !codeMatch && !typeMatch && !tagMatch && !contentMatch) {
           return false;
         }
       }
@@ -121,17 +109,36 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateTagContainer(filteredSeminars) {
-    const tagCounts = new Map();
+    const candidateTagsMap = new Map();
 
-    filteredSeminars.forEach(seminar => {
+    allSeminars.forEach(seminar => {
       seminar.tags.forEach(tag => {
-        tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
+        if (!candidateTagsMap.has(tag)) {
+          candidateTagsMap.set(tag, tag);
+        }
       });
     });
 
-    const availableTags = new Set([...tagCounts.keys(), ...selectedTags]);
+    const candidateTags = Array.from(candidateTagsMap.keys());
+    const tagCounts = new Map();
 
-    const sortedTags = Array.from(availableTags).sort((a, b) => {
+    candidateTags.forEach(candidateTag => {
+      let count = 0;
+      filteredSeminars.forEach(seminar => {
+        const hasMatch = seminar.tags.some(semTag => isTagMatched(semTag, candidateTag));
+        if (hasMatch) {
+          count++;
+        }
+      });
+      tagCounts.set(candidateTag, count);
+    });
+
+    const availableTags = candidateTags.filter(tag => {
+      const count = tagCounts.get(tag) || 0;
+      return count > 0 || selectedTags.has(tag);
+    });
+
+    const sortedTags = availableTags.sort((a, b) => {
       const countA = tagCounts.get(a) || 0;
       const countB = tagCounts.get(b) || 0;
       if (countB !== countA) {
@@ -144,10 +151,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     sortedTags.forEach(tag => {
       const count = tagCounts.get(tag) || 0;
-
-      if (count === 0 && !selectedTags.has(tag)) {
-        return;
-      }
 
       const button = document.createElement('button');
       button.className = 'tag-btn';
@@ -179,8 +182,6 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const normQuery = normalizeText(searchQuery);
-
     seminars.forEach(seminar => {
       const card = document.createElement('div');
       card.className = 'seminar-card';
@@ -195,27 +196,46 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="seminar-name">${escapeHTML(seminar.name)} 演習</div>
         <div class="seminar-title">${escapeHTML(seminar.title)}</div>
         <div class="card-tags"></div>
-        <div class="card-actions">
-          <button class="detail-toggle-btn">研究内容を見る ▼</button>
+        <div class="card-action">
+          <button class="detail-btn">詳細を見る ▼</button>
         </div>
-        <div class="seminar-detail-box" style="display: none;">
-          <div class="detail-title">【研究内容】</div>
-          <div class="detail-content">${escapeHTML(seminar.content || '（研究内容の記載なし）')}</div>
+        <div class="card-detail-content" style="display: none;">
+          <div class="detail-section-title">【研究内容】</div>
+          <div class="detail-text">${escapeHTML(seminar.content || '研究内容の詳細は演習ガイド本文をご確認ください。')}</div>
         </div>
       `;
 
-      // カード内タグの描画とクリックイベント
+      const detailBtn = card.querySelector('.detail-btn');
+      const detailContent = card.querySelector('.card-detail-content');
+
+      detailBtn.addEventListener('click', () => {
+        const isHidden = detailContent.style.display === 'none';
+        if (isHidden) {
+          detailContent.style.display = 'block';
+          detailBtn.textContent = '詳細を閉じる ▲';
+        } else {
+          detailContent.style.display = 'none';
+          detailBtn.textContent = '詳細を見る ▼';
+        }
+      });
+
       const cardTagsContainer = card.querySelector('.card-tags');
+
       seminar.tags.forEach(tag => {
-        const normT = normalizeText(tag);
-        const isSelected = Array.from(selectedTags).some(sel => {
-          const normSel = normalizeText(sel);
-          return normT.includes(normSel) || normSel.includes(normT);
-        });
-        const isSearchMatched = normQuery && normT.includes(normQuery);
+        let isMatched = false;
+        for (const selTag of selectedTags) {
+          if (isTagMatched(tag, selTag)) {
+            isMatched = true;
+            break;
+          }
+        }
+
+        if (searchQuery && normalizeText(tag).includes(normalizeText(searchQuery))) {
+          isMatched = true;
+        }
 
         const tagPill = document.createElement('span');
-        tagPill.className = `tag-pill ${(isSelected || isSearchMatched) ? 'matched' : ''}`;
+        tagPill.className = `tag-pill ${isMatched ? 'matched' : ''}`;
         tagPill.textContent = tag;
 
         tagPill.addEventListener('click', (e) => {
@@ -229,21 +249,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         cardTagsContainer.appendChild(tagPill);
-      });
-
-      // 詳細トグルボタン処理
-      const detailBtn = card.querySelector('.detail-toggle-btn');
-      const detailBox = card.querySelector('.seminar-detail-box');
-
-      detailBtn.addEventListener('click', () => {
-        const isOpen = detailBox.style.display !== 'none';
-        if (isOpen) {
-          detailBox.style.display = 'none';
-          detailBtn.textContent = '研究内容を見る ▼';
-        } else {
-          detailBox.style.display = 'block';
-          detailBtn.textContent = '研究内容を閉じる ▲';
-        }
       });
 
       seminarList.appendChild(card);

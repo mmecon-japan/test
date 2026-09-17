@@ -283,51 +283,48 @@ body {
   background-color: #d2e3fc;
 }
 
-/* 詳細ボタン・アクションエリア */
-.card-actions {
+.card-action {
   margin-top: 12px;
   text-align: right;
 }
 
-.detail-toggle-btn {
-  background-color: #f0f4f9;
-  color: #1e3c72;
-  border: 1px solid #d0dbe9;
+.detail-btn {
+  background: none;
+  border: 1px solid #2a5298;
+  color: #2a5298;
   padding: 6px 14px;
-  border-radius: 6px;
+  border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.detail-toggle-btn:hover {
-  background-color: #e1e9f5;
-  border-color: #2a5298;
+.detail-btn:hover {
+  background-color: #2a5298;
+  color: #fff;
 }
 
-/* 研究内容詳細エリア */
-.seminar-detail-box {
+.card-detail-content {
   margin-top: 12px;
   padding: 12px 14px;
   background-color: #f8fafc;
-  border: 1px solid #e2e8f0;
   border-radius: 8px;
-  font-size: 0.85rem;
-  color: #475569;
-  line-height: 1.5;
+  border-left: 3px solid #2a5298;
+  font-size: 0.88rem;
+  color: #444;
 }
 
-.seminar-detail-box .detail-title {
+.detail-section-title {
   font-weight: 700;
   color: #1e3c72;
   margin-bottom: 6px;
   font-size: 0.85rem;
 }
 
-.seminar-detail-box .detail-content {
+.detail-text {
+  line-height: 1.6;
   white-space: pre-wrap;
-  word-break: break-word;
 }
 
 .no-results {
